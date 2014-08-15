@@ -136,10 +136,19 @@ public class AstronClientRepository {
 
 		UInt16 type = reader.ReadUInt16();
 
-		if((MessageTypes)type == MessageTypes.CLIENT_HELLO_RESP) {
+		switch( (MessageTypes) type) {
+		
+		case MessageTypes.CLIENT_HELLO_RESP:
+		{
 			Debug.Log ("Response to client_hello");
-		} else {
+			break;
+		}
+		default:
+		{
 			Debug.Log ("Unknown message type: " + type);
+			break;
+		}
+		
 		}
 	}
 
