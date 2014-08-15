@@ -1,5 +1,6 @@
-﻿using UnityEngine;
-using System.Collections;
+﻿using System.Collections;
+using System.Net;
+using System.Net.Sockets;
 
 /*
  * AstronClientRepository.cs
@@ -9,14 +10,32 @@ using System.Collections;
  * */
 
 public class AstronClientRepository {
+	public bool m_connected = false;
+	private string m_dcFile;
 
-	// Use this for initialization
-	void Start () {
-	
+	private TcpClient socket;
+
+	public AstronClientRepository(string dcFile) {
+		m_connected = false;
+		m_dcFile = dcFile;
 	}
-	
-	// Update is called once per frame
-	void Update () {
-	
+
+	public AstronClientRepository(string dcFile, string host, int port) {
+		AstronClientRepository();
+		connect(host, port);
 	}
+
+	public bool connect(string host, int port) {
+		try {
+			socket.Connect(host, port);
+		} catch(SocketException e) {
+			return false;
+		}
+
+		m_connected = true;
+
+		return m_connected;
+	}
+
+		
 }
