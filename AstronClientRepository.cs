@@ -1,4 +1,5 @@
-﻿using System;
+﻿using UnityEngine;
+using System;
 using System.Collections;
 using System.Net;
 using System.Net.Sockets;
@@ -57,7 +58,13 @@ public class DatagramOut : BinaryWriter {
 	}
 }
 
+public class DatagramIn : BinaryReader {
+	public DatagramIn(Stream s) : base(s) {}
 
+	public override string ReadString() {
+		return new string(ReadChars(ReadUInt16()));
+	}
+}
 
 
 public class AstronClientRepository {
@@ -102,9 +109,39 @@ public class AstronClientRepository {
 		sout = new AstronStream();
 		odgram = new DatagramOut(sout);
 
+		beginReceiveData();
+
 		return m_connected;
 	}
 
+	private void beginReceiveData() {
+		byte[] sizeBuf = new byte[2];
+	
+
+		stream.BeginRead(sizeBuf, 0, 2, (asyncResult) =>
+		{
+			int size = (sizeBuf[1] << 8) | sizeBuf[0];
+
+			byte[] message = new byte[size];
+
+			stream.BeginRead (message, 0, size, (asyncResult2) =>
+			{
+				onData(new MemoryStream(message));
+			}, stream);
+		}, stream);
+	}
+
+	private void onData(MemoryStream data) {
+		DatagramIn reader = new DatagramIn(data);
+
+		UInt16 type = reader.ReadUInt16();
+
+		if((MessageTypes)type == MessageTypes.CLIENT_HELLO_RESP) {
+			Debug.Log ("Response to client_hello");
+		} else {
+			Debug.Log ("Unknown message type: " + type);
+		}
+	}
 
 
 	public void sendClientHello(string version, UInt32 dcHash) {
