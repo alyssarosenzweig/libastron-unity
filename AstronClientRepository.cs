@@ -15,17 +15,23 @@ public class AstronClientRepository {
 
 	private TcpClient socket;
 
-	public AstronClientRepository(string dcFile) {
+	private void initWithDC(string dcFile) {
 		m_connected = false;
 		m_dcFile = dcFile;
 	}
 
+	public AstronClientRepository(string dcFile) {
+		initWithDC(dcFile);
+	}
+
 	public AstronClientRepository(string dcFile, string host, int port) {
-		AstronClientRepository();
+		initWithDC(dcFile);
 		connect(host, port);
 	}
 
 	public bool connect(string host, int port) {
+		socket = new TcpClient();
+
 		try {
 			socket.Connect(host, port);
 		} catch(SocketException e) {
