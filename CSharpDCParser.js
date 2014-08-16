@@ -283,7 +283,7 @@ module.exports = function(fname) {
 		csfieldLookup = csfieldLookup.slice(0,-1) + "};\n";
 		csreverseFieldLookup = csreverseFieldLookup.slice(0,-1) + "};\n";
 		
-		console.log("public static class DCFile {\n"+csrootLevel+csreverseRootLevel+csfieldLookup+csreverseFieldLookup+"};");
+		console.log("using System;\nusing System.Collections.Generic;\npublic static class DCFile {\n"+csrootLevel+csreverseRootLevel+csfieldLookup+csreverseFieldLookup+"};");
 	})();
 };
 
