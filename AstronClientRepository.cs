@@ -64,7 +64,11 @@ public class DatagramIn : BinaryReader {
 	public DatagramIn(Stream s) : base(s) {}
 
 	public override string ReadString() {
-		return new string(ReadChars(ReadUInt16()));
+		return System.Text.Encoding.Default.GetString(ReadBlob());
+	}
+
+	public byte[] ReadBlob() {
+		return ReadBytes(ReadUInt16());
 	}
 }
 
@@ -178,7 +182,38 @@ public class AstronClientRepository {
 		}
 		//sout.Flush(writer);
 	}
-		
+
+	// reads *primitive* types from an Astron stream (e.g.: uint16)
+	// distinguished from a higher level type, such as structs, dclasses,
+	// or uint16%360/100, all of which are made up of primitive types
+
+	public object readPrimitive(DatagramIn dg, string type_n) {
+		switch(type_n) {
+		case "uint8":
+			return dg.ReadByte();
+		case "uint16":
+			return dg.ReadUInt16();
+		case "uint32":
+			return dg.ReadUInt32();
+		case "uint64":
+			return dg.ReadUInt64();
+		case "int8":
+			return dg.ReadSByte();
+		case "int16":
+			return dg.ReadInt16();
+		case "int32":
+			return dg.ReadInt32();
+		case "int64":
+			return dg.ReadInt64();
+		case "string":
+			return dg.ReadString();
+		case "blob":
+			return dg.ReadBlob();
+		default:
+			Debug.Log ("Error: Type '"+type_n+"' is not a primitive");
+			return null;
+		}
+	}
 }
 
 public class DistributedObject {
