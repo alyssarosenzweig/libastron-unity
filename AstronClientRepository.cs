@@ -70,7 +70,6 @@ public class DatagramIn : BinaryReader {
 
 public class AstronClientRepository {
 	public bool m_connected = false;
-	private string m_dcFile;
 
 	private TcpClient socket;
 	private NetworkStream stream;
@@ -81,17 +80,11 @@ public class AstronClientRepository {
 
 	public Dictionary<UInt32, DistributedObject> doId2do = new Dictionary<uint, DistributedObject>();
 
-	private void initWithDC(string dcFile) {
-		m_connected = false;
-		m_dcFile = dcFile;
+	public AstronClientRepository() {
+
 	}
 
-	public AstronClientRepository(string dcFile) {
-		initWithDC(dcFile);
-	}
-
-	public AstronClientRepository(string dcFile, string host, int port) {
-		initWithDC(dcFile);
+	public AstronClientRepository(string host, int port) {
 		connect(host, port);
 	}
 
