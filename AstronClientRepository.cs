@@ -1,9 +1,11 @@
 ﻿using UnityEngine;
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.IO;
+using System.Reflection;
 
 /*
  * AstronClientRepository.cs
@@ -66,7 +68,6 @@ public class DatagramIn : BinaryReader {
 	}
 }
 
-
 public class AstronClientRepository {
 	public bool m_connected = false;
 	private string m_dcFile;
@@ -77,6 +78,8 @@ public class AstronClientRepository {
 	private DatagramOut odgram;
 
 	private AstronStream sout;
+
+	public Dictionary<UInt32, DistributedObject> doId2do = new Dictionary<uint, DistributedObject>();
 
 	private void initWithDC(string dcFile) {
 		m_connected = false;
@@ -152,12 +155,53 @@ public class AstronClientRepository {
 		}
 	}
 
-
 	public void sendClientHello(string version, UInt32 dcHash) {
 		odgram.Write((UInt16) MessageTypes.CLIENT_HELLO);
 		odgram.Write(dcHash);
 		odgram.Write(version);
 		sout.Flush(writer);
 	}
+
+	public void sendUpdate(UInt32 doID, string methodName, object[] parameters) {
+		if(!doId2do.ContainsKey(doID)) {
+			Debug.Log ("ERROR: Attempt to call "+methodName+" on unknown DO "+doID);
+			return;
+		}
+
+		DistributedObject distObj;
+		doId2do.TryGetValue(doID, out distObj);
+
+		UInt16 fieldID;
+		DCFile.reverseFieldLookup.TryGetValue(distObj.getClass()+"::"+methodName, out fieldID);
+
+		odgram.Write ((UInt16) MessageTypes.CLIENT_OBJECT_SET_FIELD);
+		odgram.Write (doID);
+		odgram.Write (fieldID);
+
+		string[] parametersTypes = DCFile.fieldLookup[fieldID];
+		for(int i = 0; i < parametersTypes.Length; ++i) {
+			Debug.Log(parametersTypes[i]+" "+parameters[i]);
+			// something with serialization
+		}
+		//sout.Flush(writer);
+	}
 		
+}
+
+public class DistributedObject {
+	public UInt32 doID = 0;
+
+	private AstronClientRepository cr;
+
+	public DistributedObject(AstronClientRepository _cr) {
+		cr = _cr;
+	}
+
+	public void sendUpdate(string methodName, object[] parameters) {
+		cr.sendUpdate(doID, methodName, parameters); // pass off to ACR to do the dirty work
+	}
+
+	public string getClass() {
+		return this.GetType().Name; // while this seems like utter nonsense, it allows the ACR to perform reflection on subclasses of DOs
+	}
 }
