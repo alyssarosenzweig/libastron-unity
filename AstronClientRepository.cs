@@ -84,6 +84,8 @@ public class AstronClientRepository {
 
 	public Dictionary<UInt32, DistributedObject> doId2do = new Dictionary<uint, DistributedObject>();
 
+	public Action onHello;
+
 	public AstronClientRepository() {
 
 	}
@@ -141,6 +143,10 @@ public class AstronClientRepository {
 		case MessageTypes.CLIENT_HELLO_RESP:
 		{
 			Debug.Log ("Response to client_hello");
+
+			if(onHello != null) {
+				onHello();
+			}
 			break;
 		}
 		default:
@@ -178,9 +184,10 @@ public class AstronClientRepository {
 		string[] parametersTypes = DCFile.fieldLookup[fieldID];
 		for(int i = 0; i < parametersTypes.Length; ++i) {
 			Debug.Log(parametersTypes[i]+" "+parameters[i]);
-			// something with serialization
+
+			serializeType(odgram, parametersTypes[i], parameters[i]);
 		}
-		//sout.Flush(writer);
+		sout.Flush(writer);
 	}
 
 	// read/write *primitive* types from an Astron stream (e.g.: uint16)
@@ -251,6 +258,16 @@ public class AstronClientRepository {
 			Debug.Log ("Writing Error: Type '"+type_n+"' is not a primitive");
 			break;
 		}
+	}
+
+	public void serializeType(DatagramOut dg, string type_n, object value) {
+		// TODO: actually support complex types
+
+		writePrimitive(dg, type_n, value);
+	}
+
+	public void unserializeType(DatagramIn dg, string type_n) {
+		readPrimitive(dg, type_n);
 	}
 
 }
