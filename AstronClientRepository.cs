@@ -129,6 +129,8 @@ public class AstronClientRepository {
 			stream.BeginRead (message, 0, size, (asyncResult2) =>
 			{
 				onData(new MemoryStream(message));
+
+				beginReceiveData();
 			}, stream);
 		}, stream);
 	}
