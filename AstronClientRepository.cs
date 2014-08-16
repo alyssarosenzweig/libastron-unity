@@ -93,7 +93,7 @@ public class AstronClientRepository {
 
 		try {
 			socket.Connect(host, port);
-		} catch(SocketException e) {
+		} catch(SocketException /*e*/) {
 			return false;
 		}
 
