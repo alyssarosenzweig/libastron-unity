@@ -183,7 +183,7 @@ public class AstronClientRepository {
 		//sout.Flush(writer);
 	}
 
-	// reads *primitive* types from an Astron stream (e.g.: uint16)
+	// read/write *primitive* types from an Astron stream (e.g.: uint16)
 	// distinguished from a higher level type, such as structs, dclasses,
 	// or uint16%360/100, all of which are made up of primitive types
 
@@ -210,10 +210,49 @@ public class AstronClientRepository {
 		case "blob":
 			return dg.ReadBlob();
 		default:
-			Debug.Log ("Error: Type '"+type_n+"' is not a primitive");
+			Debug.Log ("Reading Error: Type '"+type_n+"' is not a primitive");
 			return null;
 		}
 	}
+
+	public void writePrimitive(DatagramOut dg, string type_n, object value) {
+		switch(type_n) {
+		case "uint8":
+			dg.Write( (Byte) value);
+			break;
+		case "uint16":
+			dg.Write( (UInt16) value);
+			break;
+		case "uint32":
+			dg.Write( (UInt32) value);
+			break;
+		case "uint64":
+			dg.Write( (UInt64) value);
+			break;
+		case "int8":
+			dg.Write( (SByte) value);
+			break;
+		case "int16":
+			dg.Write( (Int16) value);
+			break;
+		case "int32":
+			dg.Write( (Int32) value);
+			break;
+		case "int64":
+			dg.Write( (Int64) value);
+			break;
+		case "string":
+			dg.Write( (String) value);
+			break;
+		case "blob":
+			dg.Write( (byte[]) value);
+			break;
+		default:
+			Debug.Log ("Writing Error: Type '"+type_n+"' is not a primitive");
+			break;
+		}
+	}
+
 }
 
 public class DistributedObject {
