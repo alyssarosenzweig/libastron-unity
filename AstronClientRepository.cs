@@ -239,6 +239,13 @@ public class AstronClientRepository {
 		sout.Flush(writer);
 	}
 
+	// TODO: once Astron issue #261 is resolved, call sendHeartbeat in a loop somehow
+
+	public void sendHeartbeat() {
+		odgram.Write ((UInt16) MessageTypes.CLIENT_HEARTBEAT);
+		sout.Flush(writer);
+	}
+
 	public void sendUpdate(UInt32 doID, string methodName, object[] parameters) {
 		if(!doId2do.ContainsKey(doID)) {
 			Debug.Log ("ERROR: Attempt to call "+methodName+" on unknown DO "+doID);
