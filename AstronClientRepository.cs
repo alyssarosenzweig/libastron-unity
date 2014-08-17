@@ -92,6 +92,9 @@ public class AstronClientRepository {
 	public Dictionary<UInt32, Interest> context2interest = new Dictionary<UInt32, Interest>();	
 
 	public Action onHello;
+	public Action onSuddenDisconnect;
+	public Action<UInt16 error_code, string reason> onEject;
+
 	public Action<Interest> onAddInterest;
 	public Action<Interest> onDoneInterest;
 
@@ -161,6 +164,26 @@ public class AstronClientRepository {
 				onHello();
 			}
 			break;
+		}
+		case MessageTypes.CLIENT_DISCONNECT:
+		{
+			Debug.Log ("Sudden disconnect");
+
+			if(onSuddenDisconnect != null) {
+				onSuddenDisconnect();
+			}
+			break;
+		}
+		case MessageTypes.CLIENT_EJECT:
+		{
+			UInt16 error_code = reader.ReadUInt16();
+			string reason = reader.ReadString();
+
+			Debug.Log ("Ejected Code "+error_code+": "+reason);
+
+			if(onEject != null) {
+				onEject(error_code, reason);
+			}
 		}
 		case MessageTypes.CLIENT_ADD_INTEREST:
 		{
