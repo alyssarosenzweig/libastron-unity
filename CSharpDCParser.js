@@ -251,14 +251,14 @@ module.exports = function(fname) {
         //fs.writeFileSync("./DCFile.js", "module.exports.DCFile="+JSON.stringify(DCFile)+";module.exports.fieldLookup="+JSON.stringify(fieldLookup)+";module.exports.reverseFieldLookup="+JSON.stringify(reverseFieldLookup)+";module.exports.classLookup="+JSON.stringify(classLookup)+";module.exports.structLookup="+JSON.stringify(structLookup)+";module.exports.typedefs="+JSON.stringify(typedefs)+";");
     
 		var csrootLevel = "public static string[] DCRoot = new string[] { ";
-		var csreverseRootLevel = "public static var reverseDCRoot = new Dictionary<string, UInt16>{";
+		var csreverseRootLevel = "public static Dictionary<string, UInt16> reverseDCRoot = new Dictionary<string, UInt16>{";
 		
 		var csfieldLookup = "public static string[][] fieldLookup = new string[][]{";
 		var csfieldModifierLookup = "public static string[][] fieldModifierLookup = new string[][]{"
 		var csfieldNameLookup = "public static string[] fieldNameLookup = new string[]{";
-		var csreverseFieldLookup = "public static var reverseFieldLookup = new Dictionary<string, UInt16> {";
+		var csreverseFieldLookup = "public static Dictionary<string, UInt16> reverseFieldLookup = new Dictionary<string, UInt16> {";
 		
-		var csclassLookup = "public static var classLookup = new Dictionary<string, UInt16[]> {";
+		var csclassLookup = "public static Dictionary<string, UInt16[]> classLookup = new Dictionary<string, UInt16[]> {";
 		
 		for(f = 0; f < DCFile.length; ++f) {
 			csrootLevel += "\""+DCFile[f][1]+"\",";
