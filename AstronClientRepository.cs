@@ -347,11 +347,7 @@ public class AstronClientRepository {
 
 		string r_class_n = owner ? class_n + "OV" : class_n;
 
-		Debug.Log (r_class_n);
-
 		Type t = Type.GetType(r_class_n);
-
-		Debug.Log (t);
 
 		DistributedObject distObj;
 
@@ -361,8 +357,6 @@ public class AstronClientRepository {
 			Debug.Log (e);
 			return;
 		}
-
-		Debug.Log (distObj);
 
 		// give it some context
 
@@ -410,6 +404,8 @@ public class AstronClientRepository {
 				receiveUpdate(dg, distObj, dg.ReadUInt16());
 			}
 		}
+
+		doId2do.Add(do_id, distObj);
 	}
 
 	public void receiveUpdate(DatagramIn dg, DistributedObject distObj, UInt16 field_id) {
