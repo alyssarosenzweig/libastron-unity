@@ -240,11 +240,11 @@ public class AstronClientRepository {
 		sout.Flush(writer);
 	}
 
-	public void getInterestContext() {
+	public UInt32 getInterestContext() {
 		return interestContextCounter++;
 	}
 
-	public void addInterest(UInt32 parentID, UInt32 zoneID) {
+	public Interest addInterest(UInt32 parentID, UInt32 zoneID) {
 		UInt32 context = getInterestContext();
 		UInt16 interestID = 0;
 
@@ -257,6 +257,15 @@ public class AstronClientRepository {
 		odgram.Write (parentID);
 		odgram.Write (zoneID);
 		sout.Flush (writer);
+
+		return i;
+	}
+
+	public void removeInterest(Interest i) {
+		odgram.Write ((UInt16) MessageTypes.CLIENT_REMOVE_INTEREST);
+		odgram.Write (i.getContext());
+		odgram.Write (i.getID());
+		sout.Flush(writer);
 	}
 
 	// read/write *primitive* types from an Astron stream (e.g.: uint16)
