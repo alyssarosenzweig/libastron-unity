@@ -79,7 +79,7 @@ public class DatagramIn : BinaryReader {
 }
 
 public class AstronClientRepository {
-	public bool m_connected = false;
+	public bool connected = false;
 
 	private TcpClient socket;
 	private NetworkStream stream;
@@ -114,7 +114,7 @@ public class AstronClientRepository {
 			return false;
 		}
 
-		m_connected = true;
+		connected = true;
 
 		stream = socket.GetStream();
 		writer = new BinaryWriter(stream);
@@ -124,7 +124,7 @@ public class AstronClientRepository {
 
 		beginReceiveData();
 
-		return m_connected;
+		return connected;
 	}
 
 	private void beginReceiveData() {
