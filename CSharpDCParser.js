@@ -268,7 +268,7 @@ module.exports = function(fname) {
 				fieldVals.push(reverseFieldLookup[DCFile[f][1]+"::"+DCFile[f][2][n][1]]);
 			}
 			
-			csclassLookup += "\""+DCFile[f][1]+"\",new UInt16[]{"+(JSON.stringify(fieldVals).slice(1,-1))+"}"
+			csclassLookup += "{\""+DCFile[f][1]+"\",new UInt16[]{"+(JSON.stringify(fieldVals).slice(1,-1))+"}},"
 		}
 		
 		
