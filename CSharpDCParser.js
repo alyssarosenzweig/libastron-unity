@@ -254,22 +254,33 @@ module.exports = function(fname) {
 		var csreverseRootLevel = "public static var reverseDCRoot = new Dictionary<string, UInt16>{";
 		
 		var csfieldLookup = "public static string[][] fieldLookup = new string[][]{";
+		var csfieldModifierLookup = "public static string[][] fieldModifierLookup = new string[][]{"
 		var csreverseFieldLookup = "public static var reverseFieldLookup = new Dictionary<string, UInt16> {";
+		
+		var csclassLookup = "public static var classLookup = new Dictionary<string, UInt16[]> {";
 		
 		for(f = 0; f < DCFile.length; ++f) {
 			csrootLevel += "\""+DCFile[f][1]+"\",";
 			csreverseRootLevel += "{\""+DCFile[f][1]+"\", "+f+"},";
+			
+			var fieldVals = [];
+			for(var n = 0; n < DCFile[f][2].length; ++n) {
+				fieldVals.push(reverseFieldLookup[DCFile[f][1]+"::"+DCFile[f][2][n][1]]);
+			}
+			
+			csclassLookup += "\""+DCFile[f][1]+"\",new UInt16[]{"+(JSON.stringify(fieldVals).slice(1,-1))+"}"
 		}
 		
 		
 		for(f = 0; f < fieldLookup.length; ++f) {
-			var fields = fieldLookup[f][4];
+			var fieldArgs = fieldLookup[f][4];
 			
-			for(fs = 0; fs < fields.length; ++fs) {
-				fields[fs] = fields[fs].split(" ").slice(0,-1).join("");
+			for(fs = 0; fs < fieldArgs.length; ++fs) {
+				fieldArgs[fs] = fieldArgs[fs].split(" ").slice(0,-1).join("");
 			}
 			
-			csfieldLookup += "new string [] {"+(JSON.stringify(fields).slice(1,-1))+"},";
+			csfieldLookup += "new string [] {"+(JSON.stringify(fieldArgs).slice(1,-1))+"},";
+			csfieldModifierLookup += "new string [] {"+(JSON.stringify(fieldLookup[f][3]).slice(1,-1))+"},";
 		}
 		
 		var rfKeys = Object.keys(reverseFieldLookup);
@@ -281,9 +292,11 @@ module.exports = function(fname) {
 		csrootLevel = csrootLevel.slice(0,-1) + "};\n";
 		csreverseRootLevel = csreverseRootLevel.slice(0,-1) + "};\n";
 		csfieldLookup = csfieldLookup.slice(0,-1) + "};\n";
+		csfieldModiferLookup = csfieldModifierLookup.slice(0,-1) + "};\n";
 		csreverseFieldLookup = csreverseFieldLookup.slice(0,-1) + "};\n";
+		csclassLookup = csclassLookup.slice(0,-1) + "};\n";
 		
-		console.log("using System;\nusing System.Collections.Generic;\npublic static class DCFile {\n"+csrootLevel+csreverseRootLevel+csfieldLookup+csreverseFieldLookup+"};");
+		console.log("using System;\nusing System.Collections.Generic;\npublic static class DCFile {\n"+csrootLevel+csreverseRootLevel+csfieldLookup+csfieldModiferLookup+csreverseFieldLookup+csclassLookup+"};");
 	})();
 };
 
