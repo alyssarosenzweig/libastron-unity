@@ -218,9 +218,19 @@ public class AstronClientRepository {
 			unserializeClass(reader, SerializationLevel.REQUIRED_BCAST, false, false);
 			break;
 		}
+		case MessageTypes.CLIENT_ENTER_OBJECT_REQUIRED_OTHER:
+		{
+			unserializeClass(reader, SerializationLevel.REQUIRED_BCAST, false, true);
+			break;
+		}
 		case MessageTypes.CLIENT_ENTER_OBJECT_REQUIRED_OWNER:
 		{
 			unserializeClass(reader, SerializationLevel.REQUIRED_BCAST_OR_OWNRECV, true, false);
+			break;
+		}
+		case MessageTypes.CLIENT_ENTER_OBJECT_REQUIRED_OTHER_OWNER:
+		{
+			unserializeClass(reader, SerializationLevel.REQUIRED_BCAST_OR_OWNRECV, true, true);
 			break;
 		}
 		default:
