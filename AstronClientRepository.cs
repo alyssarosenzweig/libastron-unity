@@ -14,7 +14,13 @@ using System.Reflection;
  * See https://github.com/Astron/Astron for more information
  * */
 
-enum MessageTypes : ushort {
+public enum SerializationLevel {
+	REQUIRED,
+	REQUIRED_BCAST,
+	REQUIRED_BCAST_OR_OWNRECV
+};
+
+public enum MessageTypes : ushort {
 	CLIENT_HELLO = 1,
 	CLIENT_HELLO_RESP = 2,
 	CLIENT_DISCONNECT = 3,
@@ -169,6 +175,16 @@ public class AstronClientRepository {
 
 			break;
 		}
+		case MessageTypes.CLIENT_ENTER_OBJECT_REQUIRED:
+		{
+			unserializeClass(reader, SerializationLevel.REQUIRED_BCAST, false, false);
+			break;
+		}
+		case MessageTypes.CLIENT_ENTER_OBJECT_REQUIRED_OWNER:
+		{
+			unserializeClass(reader, SerializationLevel.REQUIRED_BCAST_OR_OWNRECV, true, false);
+			break;
+		}
 		default:
 		{
 			Debug.Log ("Unknown message type: " + type);
@@ -286,8 +302,137 @@ public class AstronClientRepository {
 		writePrimitive(dg, type_n, value);
 	}
 
-	public void unserializeType(DatagramIn dg, string type_n) {
-		readPrimitive(dg, type_n);
+	public object unserializeType(DatagramIn dg, string type_n) {
+		if(type_n.Contains("int")) {
+			int divideBy = 1;
+
+			if(type_n.Contains("/")) {
+				string[] divideParts = type_n.Split("/".ToCharArray());
+				divideBy = Int32.Parse(divideParts[1]);
+
+				type_n = divideParts[0];
+			}
+
+			if(divideBy != 1) {
+				// run unoptimized
+
+
+				object originalPrim = readPrimitive(dg, type_n);
+
+
+				double prim = System.Convert.ToDouble(originalPrim);
+
+
+				return prim / divideBy; 
+			}
+
+		}
+
+		return readPrimitive(dg, type_n);
+	}
+
+	public void unserializeClass(DatagramIn dg, SerializationLevel level, bool owner, bool optionals) {
+		// since it's the same for all the messages, quickly unpack the header
+
+		UInt32 do_id = dg.ReadUInt32();
+		UInt32 parent_id = dg.ReadUInt32();
+		UInt32 zone_id = dg.ReadUInt32();
+		UInt16 dclass_id = dg.ReadUInt16();
+
+		string class_n = DCFile.DCRoot[dclass_id];
+
+		// when unpacking a class, there are two phases:
+		// 1) unpacking the required fields (required modifiers are defined by level)
+		// and 2) unpacking optional fields
+
+		string r_class_n = owner ? class_n + "OV" : class_n;
+
+		Debug.Log (r_class_n);
+
+		Type t = Type.GetType(r_class_n);
+
+		Debug.Log (t);
+
+		DistributedObject distObj;
+
+		try {
+			distObj = Activator.CreateInstance(t, this) as DistributedObject;
+		} catch(Exception e) {
+			Debug.Log (e);
+			return;
+		}
+
+		Debug.Log (distObj);
+
+		// give it some context
+
+		distObj.doID = do_id;
+
+		// to unpack required fields, first get a list of all fields
+
+		UInt16[] field_list = DCFile.classLookup[class_n];
+	
+
+		// next, iterate through the fields to find required fields
+
+		for(int i = 0; i < field_list.Length; ++i) {
+			string[] modifiers = DCFile.fieldModifierLookup[field_list[i]];
+
+			Debug.Log (modifiers);
+
+			if(Array.IndexOf(modifiers, "required") > -1) {
+				if(level == SerializationLevel.REQUIRED) {
+					// go ahead, receive the update
+					receiveUpdate(dg,  distObj, field_list[i]);
+				} else if(level == SerializationLevel.REQUIRED_BCAST) {
+					// only if it contains broadcast
+					if(Array.IndexOf(modifiers, "broadcast") > -1) {
+						receiveUpdate(dg, distObj, field_list[i]);
+					}
+				} else if(level == SerializationLevel.REQUIRED_BCAST_OR_OWNRECV) {
+					// it either needs to contain broadcast OR ownrecv
+					if( (Array.IndexOf(modifiers, "broadcast") > -1) || (Array.IndexOf(modifiers, "ownrecv") > -1)) {
+						receiveUpdate(dg, distObj, field_list[i]);
+					}
+				}
+			}
+		}
+
+		// without optionals, we'd be done
+		// however, unpacking optionals is significantly easier
+		// because we don't care about modifiers.
+		// assume the server is sending fields we understand
+
+		if(optionals) {
+			UInt16 numOptionals = dg.ReadUInt16();
+
+			for(int o = 0; o < numOptionals; ++o) {
+				receiveUpdate(dg, distObj, dg.ReadUInt16());
+			}
+		}
+	}
+
+	public void receiveUpdate(DatagramIn dg, DistributedObject distObj, UInt16 field_id) {
+		Debug.Log("Receive update for class "+distObj.getClass()+" field ID"+field_id);
+
+		// first get the array of fields we'll need to unpack
+
+		string[] t_fields = DCFile.fieldLookup[field_id];
+
+		// next, define an empty array of params the size of the number of fields
+		object[] t_params = new object[t_fields.Length];
+
+		// unpack the parameters
+
+		for(int i = 0; i < t_fields.Length; ++i) {
+			t_params[i] = unserializeType(dg, t_fields[i]);
+		}
+
+		// finally, use reflection to call the function
+
+		Type t_type = distObj.GetType();
+		MethodInfo t_method = t_type.GetMethod(DCFile.fieldNameLookup[field_id]);
+		t_method.Invoke(distObj, t_params);
 	}
 
 }
