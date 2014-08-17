@@ -93,7 +93,7 @@ public class AstronClientRepository {
 
 	public Action onHello;
 	public Action onSuddenDisconnect;
-	public Action<UInt16 error_code, string reason> onEject;
+	public Action<UInt16, string> onEject;
 
 	public Action<Interest> onAddInterest;
 	public Action<Interest> onDoneInterest;
@@ -184,6 +184,7 @@ public class AstronClientRepository {
 			if(onEject != null) {
 				onEject(error_code, reason);
 			}
+			break;
 		}
 		case MessageTypes.CLIENT_ADD_INTEREST:
 		{
