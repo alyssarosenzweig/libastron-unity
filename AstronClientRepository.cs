@@ -93,6 +93,7 @@ public class AstronClientRepository {
 
 	public Action onHello;
 	public Action<Interest> onAddInterest;
+	public Action<Interest> onDoneInterest;
 
 	public AstronClientRepository() {
 
@@ -171,6 +172,17 @@ public class AstronClientRepository {
 
 			if(onAddInterest != null) {
 				onAddInterest(newInterest);
+			}
+
+			break;
+		}
+		case MessageTypes.CLIENT_DONE_INTEREST_RESP:
+		{
+			UInt32 context = reader.ReadUInt32 ();
+			UInt16 interest_id = reader.ReadUInt16();
+
+			if(onDoneInterest != null) {
+				onDoneInterest(context2interest[context]);
 			}
 
 			break;
