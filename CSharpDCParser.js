@@ -255,6 +255,7 @@ module.exports = function(fname) {
 		
 		var csfieldLookup = "public static string[][] fieldLookup = new string[][]{";
 		var csfieldModifierLookup = "public static string[][] fieldModifierLookup = new string[][]{"
+		var csfieldNameLookup = "public static string[] fieldNameLookup = new string[]{";
 		var csreverseFieldLookup = "public static var reverseFieldLookup = new Dictionary<string, UInt16> {";
 		
 		var csclassLookup = "public static var classLookup = new Dictionary<string, UInt16[]> {";
@@ -281,6 +282,7 @@ module.exports = function(fname) {
 			
 			csfieldLookup += "new string [] {"+(JSON.stringify(fieldArgs).slice(1,-1))+"},";
 			csfieldModifierLookup += "new string [] {"+(JSON.stringify(fieldLookup[f][3]).slice(1,-1))+"},";
+			csfieldNameLookup += "\""+fieldLookup[f][2]+"\",";
 		}
 		
 		var rfKeys = Object.keys(reverseFieldLookup);
@@ -293,10 +295,11 @@ module.exports = function(fname) {
 		csreverseRootLevel = csreverseRootLevel.slice(0,-1) + "};\n";
 		csfieldLookup = csfieldLookup.slice(0,-1) + "};\n";
 		csfieldModiferLookup = csfieldModifierLookup.slice(0,-1) + "};\n";
+		csfieldNameLookup = csfieldNameLookup.slice(0,-1) + "};\n";
 		csreverseFieldLookup = csreverseFieldLookup.slice(0,-1) + "};\n";
 		csclassLookup = csclassLookup.slice(0,-1) + "};\n";
 		
-		console.log("using System;\nusing System.Collections.Generic;\npublic static class DCFile {\n"+csrootLevel+csreverseRootLevel+csfieldLookup+csfieldModiferLookup+csreverseFieldLookup+csclassLookup+"};");
+		console.log("using System;\nusing System.Collections.Generic;\npublic static class DCFile {\n"+csrootLevel+csreverseRootLevel+csfieldLookup+csfieldModiferLookup+csfieldNameLookup+csreverseFieldLookup+csclassLookup+"};");
 	})();
 };
 
