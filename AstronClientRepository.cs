@@ -283,11 +283,60 @@ public class DistributedObject {
 		cr = _cr;
 	}
 
-	public void sendUpdate(string methodName, object[] parameters) {
+	public void legacyUpdate(string methodName, object[] parameters) {
 		cr.sendUpdate(doID, methodName, parameters); // pass off to ACR to do the dirty work
+	}
+
+	public void sendUpdate(string methodName, params string[] parameters) {
+	
+		Debug.Log (parameters.Length);
+		cr.sendUpdate(doID, methodName, parameters);
 	}
 
 	public string getClass() {
 		return this.GetType().Name; // while this seems like utter nonsense, it allows the ACR to perform reflection on subclasses of DOs
 	}
 }
+
+public class DistributedObjectOV : DistributedObject {
+	public DistributedObjectOV(AstronClientRepository cr) : base(cr) {
+
+	}
+}
+
+public class Interest {
+	private UInt32 context;
+	private UInt16 interest_id;
+	private UInt32 parent_id;
+	private UInt32[] zones;
+
+	public Interest(UInt32 _context, UInt16 _interest_id, UInt32 _parent_id, UInt32[] _zones) {
+		context = _context;
+		interest_id = _interest_id;
+		parent_id = _parent_id;
+		zones = _zones;
+	}
+
+	public Interest(UInt32 _context, UInt16 _interest_id, UInt32 _parent_id, UInt32 _zone)
+		: this(_context, _interest_id, _parent_id, new UInt32[]{zone})
+	{
+		// pass
+	}
+
+	public UInt32 getZone() {
+		return zones[0];
+	}
+
+	public UInt32[] getZones() {
+		return zones;
+	}
+
+	public UInt16 getID() {
+		return interest_id;
+	}
+
+	public UInt32 getContext() {
+		return context;
+	}
+}
+	
