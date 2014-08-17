@@ -82,9 +82,11 @@ public class AstronClientRepository {
 
 	private AstronStream sout;
 
-	public Dictionary<UInt32, DistributedObject> doId2do = new Dictionary<uint, DistributedObject>();
+	public Dictionary<UInt32, DistributedObject> doId2do = new Dictionary<UInt32, DistributedObject>();
+	public Dictionary<UInt32, Interest> context2interest = new Dictionary<UInt32, Interest>();	
 
 	public Action onHello;
+	public Action<Interest> onAddInterest;
 
 	public AstronClientRepository() {
 
@@ -149,6 +151,22 @@ public class AstronClientRepository {
 			if(onHello != null) {
 				onHello();
 			}
+			break;
+		}
+		case MessageTypes.CLIENT_ADD_INTEREST:
+		{
+			UInt32 context = reader.ReadUInt32();
+			UInt16 interest_id = reader.ReadUInt16();
+			UInt32 parent_id = reader.ReadUInt32();
+			UInt32 zone_id = reader.ReadUInt32();
+
+			Interest newInterest = new Interest(context, interest_id, parent_id, zone_id);
+			context2interest.Add(context, newInterest);
+
+			if(onAddInterest != null) {
+				onAddInterest(newInterest);
+			}
+
 			break;
 		}
 		default:
@@ -318,7 +336,7 @@ public class Interest {
 	}
 
 	public Interest(UInt32 _context, UInt16 _interest_id, UInt32 _parent_id, UInt32 _zone)
-		: this(_context, _interest_id, _parent_id, new UInt32[]{zone})
+		: this(_context, _interest_id, _parent_id, new UInt32[]{_zone})
 	{
 		// pass
 	}
@@ -329,6 +347,10 @@ public class Interest {
 
 	public UInt32[] getZones() {
 		return zones;
+	}
+
+	public UInt32 getParentID() {
+		return parent_id;
 	}
 
 	public UInt16 getID() {
