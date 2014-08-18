@@ -277,7 +277,10 @@ module.exports = function(fname) {
 			var fieldArgs = fieldLookup[f][4];
 			
 			for(fs = 0; fs < fieldArgs.length; ++fs) {
-				fieldArgs[fs] = fieldArgs[fs].split(" ").slice(0,-1).join("");
+				var type = fieldArgs[fs].split(" ").slice(0,-1).join("");
+				if(typedefs[type]) type = typedefs[type];
+				
+				fieldArgs[fs] = type;
 			}
 			
 			csfieldLookup += "new string [] {"+(JSON.stringify(fieldArgs).slice(1,-1))+"},";
