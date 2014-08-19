@@ -239,6 +239,14 @@ public class AstronClientRepository {
 			unserializeClass(reader, SerializationLevel.REQUIRED_BCAST_OR_OWNRECV, true, true);
 			break;
 		}
+		case MessageTypes.CLIENT_OBJECT_LEAVING:
+		{
+			UInt32 doId = reader.ReadUInt32();
+			doId2do[doId].leaving();
+
+			// TODO: delete object from map
+			break;
+		}
 		default:
 		{
 			Debug.Log ("Unknown message type: " + type);
@@ -589,6 +597,8 @@ public interface IDistributedObject {
 
 	UInt32 getDoID();
 	void setDoID(UInt32 doId);
+
+	void leaving();
 }
 
 public class DistributedObject : IDistributedObject {
@@ -625,6 +635,10 @@ public class DistributedObject : IDistributedObject {
 	public static bool isUnityObject() {
 		return false;
 	}
+
+	public virtual void leaving() {
+		Debug.Log (getClass()+"("+getDoID()+") leaving");
+	}
 }
 
 public class DistributedUnityObject : MonoBehaviour, IDistributedObject {
@@ -659,6 +673,11 @@ public class DistributedUnityObject : MonoBehaviour, IDistributedObject {
 
 	public static bool isUnityObject() {
 		return true;
+	}
+
+	public virtual void leaving() {
+		Debug.Log (getClass()+"("+getDoID()+") leaving");
+		Destroy (gameObject);
 	}
 }
 
