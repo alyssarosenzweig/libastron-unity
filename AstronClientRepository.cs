@@ -240,6 +240,17 @@ public class AstronClientRepository {
 			unserializeClass(reader, SerializationLevel.REQUIRED_BCAST_OR_OWNRECV, true, true);
 			break;
 		}
+		case MessageTypes.CLIENT_OBJECT_LOCATION:
+		{
+			UInt32 do_id = reader.ReadUInt32();
+			UInt32 parent_id = reader.ReadUInt32();
+			UInt32 zone_id = reader.ReadUInt32();
+
+			doId2do[do_id].getLocation().changeLocation(zone_id, parent_id);
+		
+			// TODO: fire some sort of event
+			break;
+		}
 		case MessageTypes.CLIENT_OBJECT_LEAVING:
 		{
 			UInt32 doId = reader.ReadUInt32();
