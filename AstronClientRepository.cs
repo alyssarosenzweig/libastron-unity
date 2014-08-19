@@ -88,7 +88,8 @@ public class AstronClientRepository {
 
 	private AstronStream sout;
 
-	public Dictionary<UInt32, DistributedObject> doId2do = new Dictionary<UInt32, DistributedObject>();
+	public Dictionary<UInt32, IDistributedObject> doId2do = new Dictionary<UInt32, IDistributedObject>();
+	public Dictionary<UInt32, IDistributedObject> ovId2ov = new Dictionary<UInt32, IDistributedObject>();
 	public Dictionary<UInt32, Interest> context2interest = new Dictionary<UInt32, Interest>();	
 
 	public Action onHello;
@@ -99,6 +100,11 @@ public class AstronClientRepository {
 	public Action<Interest> onDoneInterest;
 
 	private UInt32 interestContextCounter = 0;
+
+	private Dictionary<string, GameObject> prefabs = new Dictionary<string, GameObject>();
+
+	public MemoryStream incomingData;
+	public bool dataReady = false;
 
 	public AstronClientRepository() {
 
@@ -142,9 +148,9 @@ public class AstronClientRepository {
 
 			stream.BeginRead (message, 0, size, (asyncResult2) =>
 			{
-				onData(new MemoryStream(message));
+				incomingData = new MemoryStream(message);
+				dataReady = true;
 
-				beginReceiveData();
 			}, stream);
 		}, stream);
 	}
@@ -262,7 +268,7 @@ public class AstronClientRepository {
 			return;
 		}
 
-		DistributedObject distObj;
+		IDistributedObject distObj;
 		doId2do.TryGetValue(doID, out distObj);
 
 		UInt16 fieldID;
@@ -432,18 +438,42 @@ public class AstronClientRepository {
 
 		Type t = Type.GetType(r_class_n);
 
-		DistributedObject distObj;
+		IDistributedObject distObj;
 
-		try {
-			distObj = Activator.CreateInstance(t, this) as DistributedObject;
-		} catch(Exception e) {
-			Debug.Log (e);
-			return;
+		if(t.IsSubclassOf(typeof(DistributedUnityObject))) {
+			Debug.Log ("UNITY: "+t);
+
+			/*FieldInfo prefabField = t.GetField("prefab", BindingFlags.Static | BindingFlags.FlattenHierarchy | BindingFlags.Public);
+
+			Debug.Log (prefabField);
+			Debug.Log (prefabField.GetValue(null));
+
+			UnityEngine.Object prefab = prefabField.GetValue(null) as UnityEngine.Object;
+			Debug.Log (prefab);*/
+
+			GameObject prefab;
+
+			try {
+				prefab = prefabs[r_class_n];
+			} catch(Exception e) {
+				Debug.LogException(e);
+				return;
+			}
+
+			GameObject gameObject = UnityEngine.Object.Instantiate(prefab) as GameObject;
+
+			distObj = gameObject.GetComponent<MonoBehaviour>() as IDistributedObject;
+		} else {
+			Debug.Log ("STANDARD: "+t);
+
+			distObj = Activator.CreateInstance(t) as IDistributedObject;
 		}
+
+		distObj.setCR(this);
 
 		// give it some context
 
-		distObj.doID = do_id;
+		distObj.setDoID(do_id);
 
 		// to unpack required fields, first get a list of all fields
 
@@ -460,7 +490,7 @@ public class AstronClientRepository {
 			if(Array.IndexOf(modifiers, "required") > -1) {
 				if(level == SerializationLevel.REQUIRED) {
 					// go ahead, receive the update
-					receiveUpdate(dg,  distObj, field_list[i]);
+					receiveUpdate(dg, distObj, field_list[i]);
 				} else if(level == SerializationLevel.REQUIRED_BCAST) {
 					// only if it contains broadcast
 					if(Array.IndexOf(modifiers, "broadcast") > -1) {
@@ -488,10 +518,14 @@ public class AstronClientRepository {
 			}
 		}
 
-		doId2do.Add(do_id, distObj);
+		if(owner) {
+			ovId2ov.Add (do_id, distObj);
+		} else {
+			doId2do.Add(do_id, distObj);
+		}
 	}
 
-	public void receiveUpdate(DatagramIn dg, DistributedObject distObj, UInt16 field_id) {
+	public void receiveUpdate(DatagramIn dg, IDistributedObject distObj, UInt16 field_id) {
 		Debug.Log("Receive update for class "+distObj.getClass()+" field ID"+field_id);
 
 		// first get the array of fields we'll need to unpack
@@ -508,42 +542,111 @@ public class AstronClientRepository {
 		}
 
 		// finally, use reflection to call the function
-
 		Type t_type = distObj.GetType();
+
 		MethodInfo t_method = t_type.GetMethod(DCFile.fieldNameLookup[field_id]);
+		Debug.Log (t_method);
 		t_method.Invoke(distObj, t_params);
+	}
+
+	public void prefab(string name, GameObject _prefab) {
+		prefabs.Add (name, _prefab);
+	}
+
+	public void loop() {
+		if(dataReady) {
+			dataReady = false;
+			onData(incomingData); // Unity requires game code to run in a single thread
+								  // However, async reading spawns a seperate thread
+									// loop should be called from Update() in the main thread
+			beginReceiveData();
+		}
 	}
 
 }
 
-public class DistributedObject {
+public interface IDistributedObject {
+	void setCR(AstronClientRepository cr);
+	void sendUpdate(string methodName, params object[] parameters);
+	string getClass();
+
+	UInt32 getDoID();
+	void setDoID(UInt32 doId);
+}
+
+public class DistributedObject : IDistributedObject {
 	public UInt32 doID = 0;
 
 	private AstronClientRepository cr;
 
-	public DistributedObject(AstronClientRepository _cr) {
+	public DistributedObject() {}
+
+	public void setCR(AstronClientRepository _cr) {
 		cr = _cr;
 	}
 
-	public void legacyUpdate(string methodName, object[] parameters) {
-		cr.sendUpdate(doID, methodName, parameters); // pass off to ACR to do the dirty work
-	}
-
-	public void sendUpdate(string methodName, params string[] parameters) {
-	
-		Debug.Log (parameters.Length);
-		cr.sendUpdate(doID, methodName, parameters);
+	public void sendUpdate(string methodName, params object[] parameters) {
+		try {
+			cr.sendUpdate(doID, methodName, parameters);
+		} catch(Exception e) {
+			Debug.LogException(e);
+		}
 	}
 
 	public string getClass() {
 		return this.GetType().Name; // while this seems like utter nonsense, it allows the ACR to perform reflection on subclasses of DOs
 	}
+
+	public UInt32 getDoID() {
+		return doID;
+	}
+
+	public void setDoID(UInt32 _doID) {
+		doID = _doID;
+	}
+
+	public static bool isUnityObject() {
+		return false;
+	}
+}
+
+public class DistributedUnityObject : MonoBehaviour, IDistributedObject {
+	public UInt32 doID = 0;
+	private AstronClientRepository cr;
+
+	public static UnityEngine.Object prefab;
+
+	public void setCR(AstronClientRepository _cr) {
+		cr = _cr;
+	}
+
+	public void sendUpdate(string methodName, params object[] parameters) {
+		try {
+			cr.sendUpdate(doID, methodName, parameters);
+		} catch(Exception e) {
+			Debug.LogException(e);
+		}
+	}
+
+	public string getClass() {
+		return this.GetType().Name;
+	}
+
+	public UInt32 getDoID() {
+		return doID;
+	}
+
+	public void setDoID(UInt32 _doID) {
+		doID = _doID;
+	}
+
+	public static bool isUnityObject() {
+		return true;
+	}
 }
 
 public class DistributedObjectOV : DistributedObject {
-	public DistributedObjectOV(AstronClientRepository cr) : base(cr) {
 
-	}
 }
 
 public class Interest {
