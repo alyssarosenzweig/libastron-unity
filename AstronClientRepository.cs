@@ -247,6 +247,27 @@ public class AstronClientRepository {
 			// TODO: delete object from map
 			break;
 		}
+		case MessageTypes.CLIENT_OBJECT_SET_FIELD:
+		{
+			UInt32 doId = reader.ReadUInt32();
+			UInt16 field_id = reader.ReadUInt16();
+
+			receiveUpdate(reader, doId2do[doId], field_id);
+			break;
+		}
+		case MessageTypes.CLIENT_OBJECT_SET_FIELDS:
+		{
+			UInt32 doId = reader.ReadUInt32();
+
+			IDistributedObject distObj = doId2do[doId];
+
+			UInt16 num_fields = reader.ReadUInt16();
+			for(int i = 0; i < num_fields; ++i) {
+				UInt16 field_id = reader.ReadUInt16();
+				receiveUpdate(reader, distObj, field_id);
+			}
+			break;
+		}
 		default:
 		{
 			Debug.Log ("Unknown message type: " + type);
@@ -288,8 +309,6 @@ public class AstronClientRepository {
 
 		string[] parametersTypes = DCFile.fieldLookup[fieldID];
 		for(int i = 0; i < parametersTypes.Length; ++i) {
-			Debug.Log(parametersTypes[i]+" "+parameters[i]);
-
 			serializeType(odgram, parametersTypes[i], parameters[i]);
 		}
 		sout.Flush(writer);
@@ -510,8 +529,6 @@ public class AstronClientRepository {
 		for(int i = 0; i < field_list.Length; ++i) {
 			string[] modifiers = DCFile.fieldModifierLookup[field_list[i]];
 
-			Debug.Log (modifiers);
-
 			if(Array.IndexOf(modifiers, "required") > -1) {
 				if(level == SerializationLevel.REQUIRED) {
 					// go ahead, receive the update
@@ -570,7 +587,6 @@ public class AstronClientRepository {
 		Type t_type = distObj.GetType();
 
 		MethodInfo t_method = t_type.GetMethod(DCFile.fieldNameLookup[field_id]);
-		Debug.Log (t_method);
 		t_method.Invoke(distObj, t_params);
 	}
 
