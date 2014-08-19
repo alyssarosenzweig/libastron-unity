@@ -93,7 +93,6 @@ public class AstronClientRepository {
 	public Dictionary<UInt32, Interest> context2interest = new Dictionary<UInt32, Interest>();	
 
 	public Action onHello;
-	public Action onSuddenDisconnect;
 	public Action<UInt16, string> onEject;
 
 	public Action<Interest> onAddInterest;
@@ -169,15 +168,6 @@ public class AstronClientRepository {
 
 			if(onHello != null) {
 				onHello();
-			}
-			break;
-		}
-		case MessageTypes.CLIENT_DISCONNECT:
-		{
-			Debug.Log ("Sudden disconnect");
-
-			if(onSuddenDisconnect != null) {
-				onSuddenDisconnect();
 			}
 			break;
 		}
@@ -294,6 +284,13 @@ public class AstronClientRepository {
 		odgram.Write(dcHash);
 		odgram.Write(version);
 		sout.Flush(writer);
+	}
+
+	public void sendSuddenDisconnect() {
+		odgram.Write((UInt16) MessageTypes.CLIENT_DISCONNECT);
+		sout.Flush (writer);
+		connected = false;
+		socket.Close();
 	}
 
 	// TODO: once Astron issue #261 is resolved, call sendHeartbeat in a loop somehow
