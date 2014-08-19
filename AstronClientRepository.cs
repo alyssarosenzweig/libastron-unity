@@ -365,7 +365,7 @@ public class AstronClientRepository {
 			dg.Write( (SByte) value);
 			break;
 		case "int16":
-			dg.Write( (Int16) value);
+			dg.Write( Convert.ToInt16(value)); // bad bad bad shadow TODO: properly implement floating types and nuke OTP's math
 			break;
 		case "int32":
 			dg.Write( (Int32) value);
@@ -386,8 +386,24 @@ public class AstronClientRepository {
 	}
 
 	public void serializeType(DatagramOut dg, string type_n, object value) {
-		// TODO: actually support complex types
-
+		if(type_n.Contains("int")) {
+			int divideBy = 1;
+			
+			if(type_n.Contains("/")) {
+				string[] divideParts = type_n.Split("/".ToCharArray());
+				
+				divideBy = Int32.Parse(divideParts[1]);
+				
+				type_n = divideParts[0];
+			}
+			
+			if(divideBy != 1) {
+				writePrimitive(dg, type_n, (Int64) Convert.ToInt64(((double)value) * divideBy));
+				return;
+			}
+			
+		}
+		
 		writePrimitive(dg, type_n, value);
 	}
 
@@ -397,6 +413,7 @@ public class AstronClientRepository {
 
 			if(type_n.Contains("/")) {
 				string[] divideParts = type_n.Split("/".ToCharArray());
+
 				divideBy = Int32.Parse(divideParts[1]);
 
 				type_n = divideParts[0];
@@ -577,7 +594,7 @@ public interface IDistributedObject {
 public class DistributedObject : IDistributedObject {
 	public UInt32 doID = 0;
 
-	private AstronClientRepository cr;
+	protected AstronClientRepository cr;
 
 	public DistributedObject() {}
 
@@ -612,7 +629,7 @@ public class DistributedObject : IDistributedObject {
 
 public class DistributedUnityObject : MonoBehaviour, IDistributedObject {
 	public UInt32 doID = 0;
-	private AstronClientRepository cr;
+	protected AstronClientRepository cr;
 
 	public static UnityEngine.Object prefab;
 
@@ -646,7 +663,9 @@ public class DistributedUnityObject : MonoBehaviour, IDistributedObject {
 }
 
 public class DistributedObjectOV : DistributedObject {
-
+	public IDistributedObject normalView() {
+		return cr.doId2do[getDoID()];
+	}
 }
 
 public class Interest {
