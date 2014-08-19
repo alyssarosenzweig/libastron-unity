@@ -121,7 +121,7 @@ public class AstronClientRepository {
 			socket.Connect(host, port);
 		} catch(SocketException e) {
 			Debug.LogException(e);
-			return;
+			return false;
 		}
 
 		connected = true;
@@ -199,8 +199,8 @@ public class AstronClientRepository {
 			UInt16 interest_id = reader.ReadUInt16();
 			UInt32 parent_id = reader.ReadUInt32();
 			UInt32 zone_id = reader.ReadUInt32();
-
-			Interest newInterest = new Interest(context, interest_id, parent_id, zone_id);
+		
+			Interest newInterest = new Interest(context, interest_id, zone_id, parent_id);
 			context2interest.Add(context, newInterest);
 
 			if(onAddInterest != null) {
@@ -319,18 +319,18 @@ public class AstronClientRepository {
 		return interestContextCounter++;
 	}
 
-	public Interest addInterest(UInt32 parentID, UInt32 zoneID) {
+	public Interest addInterest(Location loc) {
 		UInt32 context = getInterestContext();
 		UInt16 interestID = 0;
 
-		Interest i = new Interest(context, interestID, parentID, zoneID);
+		Interest i = new Interest(context, interestID, loc.getParentId(), loc.getZone());
 		context2interest.Add(context, i);
 
 		odgram.Write ((UInt16) MessageTypes.CLIENT_ADD_INTEREST);
 		odgram.Write (context);
 		odgram.Write (interestID);
-		odgram.Write (parentID);
-		odgram.Write (zoneID);
+		odgram.Write (loc.getParentId());
+		odgram.Write (loc.getZone());
 		sout.Flush (writer);
 
 		return i;
@@ -505,6 +505,7 @@ public class AstronClientRepository {
 		// give it some context
 
 		distObj.setDoID(do_id);
+		distObj.setLocation(new Location(zone_id, parent_id));
 
 		// to unpack required fields, first get a list of all fields
 
@@ -601,11 +602,15 @@ public interface IDistributedObject {
 	UInt32 getDoID();
 	void setDoID(UInt32 doId);
 
+	Location getLocation();
+	void setLocation(Location loc);
+
 	void leaving();
 }
 
 public class DistributedObject : IDistributedObject {
 	public UInt32 doID = 0;
+	private Location my_location;
 
 	protected AstronClientRepository cr;
 
@@ -642,11 +647,20 @@ public class DistributedObject : IDistributedObject {
 	public virtual void leaving() {
 		Debug.Log (getClass()+"("+getDoID()+") leaving");
 	}
+
+	public Location getLocation() {
+		return my_location;
+	}
+
+	public void setLocation(Location loc) {
+		my_location = loc;
+	}
 }
 
 public class DistributedUnityObject : MonoBehaviour, IDistributedObject {
 	public UInt32 doID = 0;
 	protected AstronClientRepository cr;
+	private Location my_location;
 
 	public static UnityEngine.Object prefab;
 
@@ -682,11 +696,42 @@ public class DistributedUnityObject : MonoBehaviour, IDistributedObject {
 		Debug.Log (getClass()+"("+getDoID()+") leaving");
 		Destroy (gameObject);
 	}
+
+	public Location getLocation() {
+		return my_location;
+	}
+	
+	public void setLocation(Location loc) {
+		my_location = loc;
+	}
 }
 
 public class DistributedObjectOV : DistributedObject {
 	public IDistributedObject normalView() {
 		return cr.doId2do[getDoID()];
+	}
+}
+
+public class Location {
+	private UInt32 zone;
+	private UInt32 parent_id;
+
+	public Location(UInt32 _zone, UInt32 _parent_id) {
+		zone = _zone;
+		parent_id = _parent_id;
+	}
+
+	public UInt32 getZone() {
+		return zone;
+	}
+
+	public UInt32 getParentId() {
+		return parent_id;
+	}
+
+	public void changeLocation(UInt32 newZone, UInt32 newParentId) {
+		zone = newZone;
+		parent_id = newParentId;
 	}
 }
 
