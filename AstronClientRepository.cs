@@ -119,8 +119,9 @@ public class AstronClientRepository {
 
 		try {
 			socket.Connect(host, port);
-		} catch(SocketException /*e*/) {
-			return false;
+		} catch(SocketException e) {
+			Debug.LogException(e);
+			return;
 		}
 
 		connected = true;
@@ -447,14 +448,8 @@ public class AstronClientRepository {
 			}
 
 			if(divideBy != 1) {
-				// run unoptimized
-
-
 				object originalPrim = readPrimitive(dg, type_n);
-
-
 				double prim = System.Convert.ToDouble(originalPrim);
-
 
 				return prim / divideBy; 
 			}
@@ -485,15 +480,7 @@ public class AstronClientRepository {
 		IDistributedObject distObj;
 
 		if(t.IsSubclassOf(typeof(DistributedUnityObject))) {
-			Debug.Log ("UNITY: "+t);
-
-			/*FieldInfo prefabField = t.GetField("prefab", BindingFlags.Static | BindingFlags.FlattenHierarchy | BindingFlags.Public);
-
-			Debug.Log (prefabField);
-			Debug.Log (prefabField.GetValue(null));
-
-			UnityEngine.Object prefab = prefabField.GetValue(null) as UnityEngine.Object;
-			Debug.Log (prefab);*/
+			Debug.Log ("DistributedUnityObject instantiated of type "+t);
 
 			GameObject prefab;
 
@@ -508,7 +495,7 @@ public class AstronClientRepository {
 
 			distObj = gameObject.GetComponent<MonoBehaviour>() as IDistributedObject;
 		} else {
-			Debug.Log ("STANDARD: "+t);
+			Debug.Log ("DistributedObject instantiated of type "+t);
 
 			distObj = Activator.CreateInstance(t) as IDistributedObject;
 		}
