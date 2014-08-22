@@ -237,8 +237,7 @@ public class AstronClientRepository {
 			UInt32 zone_id = reader.ReadUInt32();
 
 			doId2do[do_id].getLocation().changeLocation(zone_id, parent_id);
-		
-			// TODO: fire some sort of event
+			doId2do[do_id].locationChanged();
 			break;
 		}
 		case MessageTypes.CLIENT_OBJECT_LEAVING:
@@ -377,6 +376,8 @@ public class AstronClientRepository {
 			return dg.ReadString();
 		case "blob":
 			return dg.ReadBlob();
+		case "float64":
+			return dg.ReadDouble();
 		default:
 			Debug.Log ("Reading Error: Type '"+type_n+"' is not a primitive");
 			return null;
@@ -414,6 +415,9 @@ public class AstronClientRepository {
 			break;
 		case "blob":
 			dg.Write( (byte[]) value);
+			break;
+		case "float64":
+			dg.Write ( (double) value);
 			break;
 		default:
 			Debug.Log ("Writing Error: Type '"+type_n+"' is not a primitive");
@@ -612,6 +616,7 @@ public interface IDistributedObject {
 
 	Location getLocation();
 	void setLocation(Location loc);
+	void locationChanged();
 
 	void leaving();
 }
@@ -663,6 +668,8 @@ public class DistributedObject : IDistributedObject {
 	public void setLocation(Location loc) {
 		my_location = loc;
 	}
+
+	private virtual void locationChanged() { } // subclasses should override this method
 }
 
 public class DistributedUnityObject : MonoBehaviour, IDistributedObject {
@@ -712,11 +719,17 @@ public class DistributedUnityObject : MonoBehaviour, IDistributedObject {
 	public void setLocation(Location loc) {
 		my_location = loc;
 	}
+
+	private virtual void locationChanged() { } // subclasses should override this method
 }
 
 public class DistributedObjectOV : DistributedObject {
 	public IDistributedObject normalView() {
-		return cr.doId2do[getDoID()];
+		IDistributedObject o;
+
+		cr.doId2do.TryGetValue(getDoID(), out o);
+
+		return o;
 	}
 }
 
