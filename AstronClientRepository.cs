@@ -107,9 +107,7 @@ public class AstronClientRepository {
 
 	public int heartbeatInterval = 0;
 	public int heartbeatCounter = 0; // send the first heartbeat immediately
-
-	public ClientState state = ClientState.PREHELLO;
-
+	
 	public AstronClientRepository() {
 
 	}
