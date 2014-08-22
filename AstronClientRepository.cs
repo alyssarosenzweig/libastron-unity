@@ -245,7 +245,11 @@ public class AstronClientRepository {
 			UInt32 doId = reader.ReadUInt32();
 			doId2do[doId].leaving();
 
-			// TODO: delete object from map
+			// freeing the DO from the doId2do map is done by the leaving method
+			// via the removeDOfromMap function
+
+			// if the leaving method is overriden,
+			// removeDOfromMap should still be called to prevent memory leaks
 			break;
 		}
 		case MessageTypes.CLIENT_OBJECT_SET_FIELD:
@@ -604,6 +608,10 @@ public class AstronClientRepository {
 		}
 	}
 
+	public void removeDOfromMap(UInt32 doId) {
+		doId2do.Remove(doId);
+	}
+
 }
 
 public interface IDistributedObject {
@@ -659,6 +667,7 @@ public class DistributedObject : IDistributedObject {
 
 	public virtual void leaving() {
 		Debug.Log (getClass()+"("+getDoID()+") leaving");
+		cr.removeDOfromMap(doID);
 	}
 
 	public Location getLocation() {
@@ -710,6 +719,7 @@ public class DistributedUnityObject : MonoBehaviour, IDistributedObject {
 	public virtual void leaving() {
 		Debug.Log (getClass()+"("+getDoID()+") leaving");
 		Destroy (gameObject);
+		cr.removeDOfromMap(doID);
 	}
 
 	public Location getLocation() {
