@@ -105,6 +105,11 @@ public class AstronClientRepository {
 	public MemoryStream incomingData;
 	public bool dataReady = false;
 
+	public int heartbeatInterval = 0;
+	public int heartbeatCounter = 0; // send the first heartbeat immediately
+
+	public ClientState state = ClientState.PREHELLO;
+
 	public AstronClientRepository() {
 
 	}
@@ -606,6 +611,11 @@ public class AstronClientRepository {
 									// loop should be called from Update() in the main thread
 			beginReceiveData();
 		}
+
+		if(heartbeatInterval != 0 && heartbeatCounter-- <= 0) {
+			sendHeartbeat(); // let the server know we are alive
+			heartbeatCounter = heartbeatInterval;
+		}
 	}
 
 	public void removeDOfromMap(UInt32 doId) {
@@ -678,7 +688,7 @@ public class DistributedObject : IDistributedObject {
 		my_location = loc;
 	}
 
-	private virtual void locationChanged() { } // subclasses should override this method
+	public virtual void locationChanged() { } // subclasses should override this method
 }
 
 public class DistributedUnityObject : MonoBehaviour, IDistributedObject {
@@ -730,7 +740,7 @@ public class DistributedUnityObject : MonoBehaviour, IDistributedObject {
 		my_location = loc;
 	}
 
-	private virtual void locationChanged() { } // subclasses should override this method
+	public virtual void locationChanged() { } // subclasses should override this method
 }
 
 public class DistributedObjectOV : DistributedObject {
